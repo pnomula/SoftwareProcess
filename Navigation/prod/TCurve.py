@@ -1,5 +1,4 @@
 import math
-import random
 class TCurve(object):
 
 # outward facing methods
@@ -68,14 +67,12 @@ class TCurve(object):
         simsonOld = 0
         simsonNew = epsilon
         s = 4
-        iteration=1
         while(abs((simsonNew-simsonOld)/simsonNew) > epsilon ):
             simsonOld = simsonNew
             w = float(highBound - lowBound)/s
             sTmp = s
             count = 1
             tmpResult = 0.0
-            iteration =1
             while(sTmp-1 != 0):
                 if ( count%2 == 1):
                     tmpResult += 4*self.f(lowBound+count*w,n)
@@ -84,10 +81,7 @@ class TCurve(object):
                 sTmp -= 1
                 count += 1
             simsonNew = (w/3)*(self.f(lowBound,n) +self.f(highBound,n)+ tmpResult) 
-            print(s,iteration,t,w,simsonNew,simsonOld)
             s *= 2
-            iteration +=1
-        print(s,iteration,t,w,simsonNew,simsonOld,"Last")
         return simsonNew
     
           
