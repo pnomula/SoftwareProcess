@@ -4,106 +4,97 @@ class Angle():
     def __init__(self):
         self.angle = 0.0 # set degree 0 and minute 0
 
-    def setDegrees(self, degrees = 0.0):
+    def setDegrees(self, degrees=0.0):
+        functionName = "Angle.setDegrees:"
         # trying to convert degree to float type,if not it will raise the exception for valueError
-        try:
-            degrees = float(degrees)
-        except ValueError as raisedException:
-            dignosticString = self.__class__.__name__ + "." + sys._getframe().f_code.co_name +  ":  \"degrees\" violates the parament specification"
-            return self.angle
-
+        if (isinstance(degrees,str)):
+            raise ValueError(functionName + "degrees given not as float")
+        degrees = float(degrees)
         # check if degree provided by user is negetive, if It is true, add with
         # 360 % to get correct degree, and dividing with 360 in case of user
         # provide degree more than 360.
         # in case of negative degree higher than 360 degree , we need to divide with -360 for geting right remainder
-        if ( degrees < 1.0 ):
+        if ( degrees < 0.0 ):
             self.angle = 360 + (degrees % -360)
         else:
             self.angle = degrees % 360
 
-        return round(self.angle,1)
+        return self.angle
 
     def setDegreesAndMinutes(self, degrees):
+        functionName = "Angle.setDegreesAndMinutes:"
         # defining the regular expression for syntax should be integer than d than float value
-        regex = r"(\d+)d(\d+.\d+)"
+        regex = r"([-,0-9]*?[\.,0-9]*)d([0-9]*?[\.,0-9]*)"
+        match = re.search(regex,degrees)
+        if match == None:
+            raise ValueError(functionName," \"angleString1\" violates the parament specification")
+        if (match.group(1) == ""):
+            raise ValueError(functionName," \"angleString5\" violates the parament specification")
+        if (match.group(2) == ""):
+            raise ValueError(functionName," \"angleString6\" violates the parament specification")
+        if (re.search(r"\.", match.group(1))):
+            raise ValueError(functionName," \"angleString2\" violates the parament specification")
+        # check if float is having only one decimal point, if it has more than 1 decimal point, raise exception
+        if (re.search(r"\.", match.group(2)) and len(match.group(2).rsplit('.')[-1]) > 1):
+            raise ValueError(functionName," \"angleString3\" violates the parament specification")
+        # check if float object is not negetive, minute can't be negetive, so raise execption in case of negetive
+        if (float(match.group(2)) < 0.0) :
+            raise ValueError(functionName," \"angleString4\" violates the parament specification")
+        # convert the minute into decimal point for storing into angle variable
+        if float(match.group(1)) < 0.0 :
+            self.angle = 360 +( float(match.group(1)) % -360) - float(match.group(2))/60
+        else:
+            self.angle = float(match.group(1)) % 360 + float(match.group(2))/60
+        return self.angle
 
-        try:
-            # if match found then right string is provide otherwise raise expection in no match found
-            match = re.search(regex,degrees)
-            if match is None:
-                raise Exception
-            else:
-                # check if first group is integer object, in case of empty degree raise exception
-                try:
-                    self.angle = int(match.group(1))
-                except:
-                    raise Exception
-                try:
-                    # check if float is having only one decimal point, if it has more than 1 decimal point, raise exception
-                    if len(match.group(2).rsplit('.')[-1]) == 1:
-                        # check if float object is not negetive, minute can't be negetive, so raise execption in case of negetive
-                        if float(match.group(2)) < 0.0 :
-                            raise Exception
-                        else:
-                            # convert the minute into decimal point for storing into angle variable
-                            self.angle += float(match.group(2))/60
-                    else:
-                        raise Exception
-                except :
-                    raise Exception
-        except Exception as ValueError:
-            Exception("{}.{}:  \"angleString\" violates the parament specification" .format(self.__class__.__name__ ,sys._getframe().f_code.co_name))
-            return self.angle
-
-        return round((float(match.group(1)) + float(match.group(2))/60),1)
-
-    def add(self, angle):
+    def add(self, angle=None):
+        functionName = "Angle.add:"
         # check if angle is valid class object, otherwise raise exception
-        try:
-            if isinstance(angle,self.__class__):
-                # add the other angle class object angle to called class angle
-                # take modulus to take care of not crossing 360 degree
-                self.angle += angle.angle
-                self.angle %= 360
-            else:
-                raise Exception
-        except Exception as ValueError:
-            Exception("{}.{}:  \"angle\" is not a valid instance of Angle" .format(self.__class__.__name__ ,sys._getframe().f_code.co_name))
-        return round(self.angle,1)
+        if (angle == None):
+            raise ValueError(functionName + "missing angle argument")
+        if (not(isinstance(angle,self.__class__))):
+            raise ValueError(functionName + "\"angle\" is not a valid instance of Angle")
 
-    def subtract(self, angle):
-        # check if angle is valid class object, otherwise raise exception
-        try:
-            if isinstance(angle,self.__class__):
-                # substract the other angle class object angle to called class angle
-                # check if it is negative, then add with 360 degree
-                # take modulus to take care of not crossing 360 degree
-                self.angle -= angle.angle
-                if self.angle < 0.0 :
-                    self.angle += 360
-            else:
-                raise Exception
-        except Exception as ValueError:
-            Exception("{}.{}:  \"angle\" is not a valid instance of Angle" .format(self.__class__.__name__ ,sys._getframe().f_code.co_name))
-        return round(self.angle,1)
+        # add the other angle class object angle to called class angle
+        # take modulus to take care of not crossing 360 degree
+        self.angle += angle.angle
+        self.angle %= 360
+        return self.angle
 
-    def compare(self, angle):
+    def subtract(self, angle=None):
+        functionName = "Angle.subtract:"
         # check if angle is valid class object, otherwise raise exception
-        try:
-            if isinstance(angle,self.__class__):
-                # return 1 if calling class has higher angle than parameter passed angle
-                if self.angle > angle.angle :
-                    return 1
-                # return 1 if calling class has lower angle than parameter passed angle
-                elif self.angle < angle.angle:
-                    return -1
-                # return 0 if calling class has equal angle than parameter passed angle
-                else:
-                    return 0
-            else:
-                raise Exception
-        except Exception as ValueError:
-            Exception("{}.{}:  \"angle\" is not a valid instance of Angle" .format(self.__class__.__name__ ,sys._getframe().f_code.co_name))
+        if (angle == None):
+            raise ValueError(functionName + "missing angle argument")
+        if (not(isinstance(angle,self.__class__))):
+            raise ValueError(functionName + "\"angle\" is not a valid instance of Angle")
+
+
+        # substract the other angle class object angle to called class angle
+        # check if it is negative, then add with 360 degree
+        # take modulus to take care of not crossing 360 degree
+        self.angle -= angle.angle
+        if self.angle < 0.0 :
+            self.angle += 360
+        return self.angle
+
+    def compare(self, angle=None):
+        functionName = "Angle.compare:"
+        # check if angle is valid class object, otherwise raise exception
+        if (angle == None):
+            raise ValueError(functionName + "missing angle argument")
+        if (not(isinstance(angle,self.__class__))):
+            raise ValueError(functionName + "\"angle\" is not a valid instance of Angle")
+
+        # return 1 if calling class has higher angle than parameter passed angle
+        if self.angle > angle.angle :
+            return 1
+        # return 1 if calling class has lower angle than parameter passed angle
+        elif self.angle < angle.angle:
+            return -1
+        # return 0 if calling class has equal angle than parameter passed angle
+        else:
+            return 0
 
     def getString(self):
         # convert floating point angle to convert into string as xdy.y  for angle
@@ -115,4 +106,4 @@ class Angle():
 
     def getDegrees(self):
         # return angle into 1 decimal point
-        return round(self.angle,1)
+        return self.angle
