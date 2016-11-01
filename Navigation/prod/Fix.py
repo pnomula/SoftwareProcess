@@ -234,12 +234,21 @@ class Fix:
                 string += str(round(((adjustedAltitude - int(adjustedAltitude))*60),1))
                 f.write(string)
                 f.write("\t")
+                index = None
+                lowerIndex =  None
                 for i in range(len(self.starData)):
                     if self.starData[i][0] == item[2] and self.starData[i][1] == item[0] :
                         index = i
                         break
-                SHA_star = self.starData[index][2]
-                latitude = self.starData[index][3]
+                    if self.starData[i][0] == item[2] and self.starData[i][1] < item[0] and index == None:
+                        lowerIndex = i
+                if index != None:
+                    SHA_star = self.starData[index][2]
+                    latitude = self.starData[index][3]
+                else:
+                    SHA_star = self.starData[lowerIndex][2]
+                    latitude = self.starData[lowerIndex][3]
+                    
                 flag = True
                 for i in range(len(self.ariesData)):
                     if self.ariesData[i][0] == item[2] and self.ariesData[i][1] == item[1].split(":")[0] and flag == True:
