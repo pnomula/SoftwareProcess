@@ -10,20 +10,20 @@ import Angle
 class Fix:
     def __init__(self,logFile="log.txt"):
         functionName = "Fix.__init__:"
-        self.anAngle = Angle.Angle()
+        self.angle = Angle.Angle()
         self.logFile = logFile
         self.sightingFile = None
         if (not(isinstance(self.logFile,str))):
            raise ValueError(functionName," logFile input is not string\n")
-        if len(logFile) > 1:
+        if len(self.logFile) > 1:
             if (op.exists(self.logFile)):
-                tmpString = self.convertMTime()
+                tempStr = self.convertMTime()
             else:
                 open(self.logFile,'w').close()
-                tmpString = self.convertCTime()
+                tempStr = self.convertCTime()
             with open(self.logFile,'a') as f:
                 f.write("LOG:\t")
-                f.write(tmpString)
+                f.write(tempStr)
                 f.write(":\t")
                 absPath = op.join(op.dirname(op.abspath(__file__)),self.logFile)
                 f.write(absPath)
@@ -31,6 +31,7 @@ class Fix:
             f.close()
         else:
            raise ValueError(functionName," logFile name is less than 2 character\n")
+    
     def setSightingFile(self,sightingFile):
         functionName = "Fix.setSightingFile:"
         self.sightingFile = sightingFile
@@ -41,13 +42,13 @@ class Fix:
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," sightingFile length is not GE than 1\n")
         if tmp[1] !=  "xml" :
-            raise ValueError(functionName," file extension is not xml\n")
+            raise ValueError(functionName," sightingFile extension is not xml\n")
 
-        tmpString = self.convertMTime()
+        tempStr = self.convertMTime()
         sightingAbsPath = op.join(op.dirname(op.abspath(__file__)),self.sightingFile)
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
-            f.write(tmpString)
+            f.write(tempStr)
             f.write(":\t")
             f.write(sightingAbsPath)
             f.write("\n")
@@ -91,7 +92,7 @@ class Fix:
             tmp = child.find('observation').text
             tmp = tmp.lstrip(' ')
             tmp = tmp.rstrip(' ')
-            observation = self.anAngle.setDegreesAndMinutes(tmp)
+            observation = self.angle.setDegreesAndMinutes(tmp)
 
         container = root.findall("sighting")
         data = []
@@ -148,14 +149,14 @@ class Fix:
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," AriesFile length is not GE than 1\n")
         if tmp[1] !=  "txt" :
-            raise ValueError(functionName," file extension is not txt\n")
+            raise ValueError(functionName," AriesFile extension is not txt\n")
         self.ariesData = []
         with open(ariesFile,'r') as f:
             data = csv.reader(f,delimiter='\t')
             for row in data:
                 newdate = datetime.strptime(row[0],"%m/%d/%y")
                 hh = int(row[1])
-                degreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
+                degreeMinute = self.angle.setDegreesAndMinutes(row[2])
                 self.ariesData.append(newdate,hh,degreeMinute)
         f.close()
         self.ariesData.sort()
@@ -171,14 +172,14 @@ class Fix:
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," StarFile length is not GE than 1\n")
         if tmp[1] !=  "txt" :
-            raise ValueError(functionName," file extension is not txt\n")
+            raise ValueError(functionName," StarFile extension is not txt\n")
         self.starData = []
         with open(starFile,'r') as f:
             data = csv.reader(f,delimiter='\t')
             for row in data:
                 body = row[0]
                 newdate = datetime.strptime(row[1],"%m/%d/%y")
-                longitudedegreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
+                longitudedegreeMinute = self.angle.setDegreesAndMinutes(row[2])
                 latitudedegreeMinute = row[3]
                 self.starData.append(body,newdate,longitudedegreeMinute,latitudedegreeMinute)
         f.close()
@@ -190,17 +191,17 @@ class Fix:
         self.approximateLatitude = "0d0.0"
         self.approximateLongitude = "0d0.0"
         if (self.sightingFile == None):
-            raise ValueError(functionName,"no sighting file has been set ")
+            raise ValueError(functionName,"No sighting file has been set ")
         if (self.ariesFile == None):
-            raise ValueError(functionName,"no aries file has been set ")
+            raise ValueError(functionName,"No aries file has been set ")
         if (self.starFile == None):
-            raise ValueError(functionName,"no star file has been set ")
+            raise ValueError(functionName,"No star file has been set ")
 
-        tmpString = self.convertMTime()
+        tempStr = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
                 f.write("LOG:\t")
-                f.write(tmpString)
+                f.write(tempStr)
                 f.write(":\t")
                 f.write(item[2])
                 f.write("\t")
@@ -213,8 +214,8 @@ class Fix:
                 tmp = tmp.lstrip(' ')
                 tmp = tmp.rstrip(' ')
 
-                obsevedAltitude = self.anAngle.setDegreesAndMinutes(tmp)
-                tmpAltitude = self.anAngle.setDegreesAndMinutes("0d0.1")
+                obsevedAltitude = self.angle.setDegreesAndMinutes(tmp)
+                tmpAltitude = self.angle.setDegreesAndMinutes("0d0.1")
 
                 if obsevedAltitude < tmpAltitude:
                     raise ValueError(functionName," observerAltitude is LE 0.1 arc minute\n")
@@ -259,18 +260,18 @@ class Fix:
                 f.write(string)
                 f.write("\n")
 
-            tmpString = self.convertMTime()
+            tempStr = self.convertMTime()
             f.write("LOG:\t")
-            f.write(tmpString)
+            f.write(tempStr)
             f.write(":\t")
             f.write("Sighting errors:")
             f.write(":\t")
             f.write(str(self.errnoNo))
             f.write("\n")
 
-            tmpString = self.convertMTime()
+            tempStr = self.convertMTime()
             f.write("LOG:\t")
-            f.write(tmpString)
+            f.write(tempStr)
             f.write(":\t")
             f.write("End of sighting file: ")
             f.write(self.sightingFile)
