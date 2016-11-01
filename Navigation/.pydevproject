@@ -1,15 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?eclipse-pydev version="1.0"?><pydev_project>
 <<<<<<< HEAD
+<<<<<<< HEAD
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.7</pydev_property>
 =======
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">python</pydev_property>
+=======
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">python3</pydev_property>
+>>>>>>> 378395a... Merging CA03
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.7</pydev_property>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>/Volumes/Maverick/Dropbox/Workspace/SoftwareProcess/Navigation/prod</path>
 <path>/Volumes/Maverick/Dropbox/Workspace/SoftwareProcess/Navigation</path>
 <path>/Volumes/Maverick/Dropbox/Workspace/SoftwareProcess</path>
 </pydev_pathproperty>
+<<<<<<< HEAD
 >>>>>>> 9a85e27... Final Commit
+=======
+>>>>>>> 378395a... Merging CA03
 </pydev_project>
