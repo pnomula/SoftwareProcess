@@ -1,7 +1,7 @@
 from datetime import datetime
 import xml.etree.ElementTree as ET
 import sys
-import os
+import os.path as op
 import time
 import pytz
 import math
@@ -16,7 +16,7 @@ class Fix:
         if (not(isinstance(self.logFile,str))):
            raise ValueError(functionName," logFile input is not string\n")
         if len(logFile) > 1:
-            if (os.path.exists(self.logFile)):
+            if (op.exists(self.logFile)):
                 tmpString = self.convertMTime()
             else:
                 open(self.logFile,'w').close()
@@ -25,16 +25,16 @@ class Fix:
                 f.write("LOG:\t")
                 f.write(tmpString)
                 f.write(":\t")
-                absPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.LogFile)
+                absPath = op.join(op.dirname(op.abspath(__file__)),self.logFile)
                 f.write(absPath)
                 f.write("\n")
             f.close()
         else:
            raise ValueError(functionName," logFile name is less than 2 character\n")
-        return Fix()
     def setSightingFile(self,sightingFile):
         functionName = "Fix.setSightingFile:"
         self.sightingFile = sightingFile
+        self.errorNo = 0
         if (not(isinstance(sightingFile,str))):
             raise ValueError(functionName," sightingFile input is not string\n")
         tmp = sightingFile.split('.')
@@ -43,11 +43,8 @@ class Fix:
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," file extension is not xml\n")
 
-        
         tmpString = self.convertMTime()
-        
-        sightingAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.sightingFile)
-        
+        sightingAbsPath = op.join(op.dirname(op.abspath(__file__)),self.sightingFile)
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
             f.write(tmpString)
@@ -55,34 +52,41 @@ class Fix:
             f.write(sightingAbsPath)
             f.write("\n")
         f.close()
-        
+
         tree = ET.parse(self.sightingFile)
         root = tree.getroot()
         for child in root.findall('sighting'):
 
             if child.find('body') == None :
-                raise ValueError(functionName,"A body tag is missing")
-
+                self.errorNo += 1
+                continue
             if len(child.find('body').text) ==  0 :
-                raise ValueError(functionName,"A body text  is missing")
+                self.errorNo += 1
+                continue
 
             if child.find('date') == None :
-                raise ValueError(functionName,"A date tag is missing")
+                self.errorNo += 1
+                continue
 
             if len(child.find('date').text) ==  0 :
-                raise ValueError(functionName,"A date text  is missing")
+                self.errorNo += 1
+                continue
 
             if child.find('time') == None :
-                raise ValueError(functionName,"A time tag is missing")
+                self.errorNo += 1
+                continue
 
             if len(child.find('time').text) ==  0 :
-                raise ValueError(functionName,"A time text  is missing")
+                self.errorNo += 1
+                continue
 
             if child.find('observation') == None :
-                raise ValueError(functionName,"A observation tag is missing")
+                self.errorNo += 1
+                continue
 
             if len(child.find('observation').text) ==  0 :
-                raise ValueError(functionName,"A observation text  is missing")
+                self.errorNo += 1
+                continue
 
             tmp = child.find('observation').text
             tmp = tmp.lstrip(' ')
@@ -129,15 +133,15 @@ class Fix:
 
             data.append((date,time,body,tmp))
         data.sort()
-        
+
         self.sightingFileData = data
-        
-        return sightingAbsPath 
-    
+
+        return sightingAbsPath
+
     def setAriesFile(self,ariesFile="aries.txt"):
         functionName = "Fix.setAriesFile:"
         self.ariesFile = ariesFile
-        ariesAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.ariesFile)
+        ariesAbsPath = op.join(op.dirname(op.abspath(__file__)),self.ariesFile)
         if (not(isinstance(ariesFile,str))):
             raise ValueError(functionName," AriesFile input is not string\n")
         tmp = ariesFile.split('.')
@@ -152,15 +156,15 @@ class Fix:
                 newdate = datetime.strptime(row[0],"%m/%d/%y")
                 hh = int(row[1])
                 degreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
-                self.ariesData[newdate,hh,degreeMinute]
+                self.ariesData.append(newdate,hh,degreeMinute)
         f.close()
         self.ariesData.sort()
         return ariesAbsPath
-    
+
     def setStarFile(self,starFile="star.txt"):
         functionName = "Fix.setStarFile:"
         self.starFile = starFile
-        starAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.starFile)
+        starAbsPath = op.join(op.dirname(op.abspath(__file__)),self.starFile)
         if (not(isinstance(starFile,str))):
             raise ValueError(functionName," StarFile input is not string\n")
         tmp = starFile.split('.')
@@ -169,18 +173,18 @@ class Fix:
         if tmp[1] !=  "txt" :
             raise ValueError(functionName," file extension is not txt\n")
         self.starData = []
-        with open(ariesFile,'r') as f:
+        with open(starFile,'r') as f:
             data = csv.reader(f,delimiter='\t')
             for row in data:
                 body = row[0]
                 newdate = datetime.strptime(row[1],"%m/%d/%y")
                 longitudedegreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
                 latitudedegreeMinute = row[3]
-                self.starData[body,newdate,longitudedegreeMinute,latitudedegreeMinute]
+                self.starData.append(body,newdate,longitudedegreeMinute,latitudedegreeMinute)
         f.close()
         self.starData.sort()
         return starAbsPath
-    
+
     def getSightings(self):
         functionName = "Fix.getSightings:"
         self.approximateLatitude = "0d0.0"
@@ -191,10 +195,10 @@ class Fix:
             raise ValueError(functionName,"no aries file has been set ")
         if (self.starFile == None):
             raise ValueError(functionName,"no star file has been set ")
-        
+
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
-            for item in data:
+            for item in self.sightingFileData:
                 f.write("LOG:\t")
                 f.write(tmpString)
                 f.write(":\t")
@@ -237,15 +241,15 @@ class Fix:
                 latitude = self.starData[index][3]
                 flag = True
                 for i in range(len(self.ariesData)):
-                    if self.ariesData[i][0] == item[2] and self.ariesData[i][1] == item[1].split(":")[0] and flag == True: 
+                    if self.ariesData[i][0] == item[2] and self.ariesData[i][1] == item[1].split(":")[0] and flag == True:
                         storeHour = self.ariesData[i][1] +1
                         GHA_aries1 = self.ariesData[i][3]
                         flag = False
-                    if flag == False and self.ariesData[i][0] == item[2] and self.ariesData[i][1] == storeHour: 
+                    if flag == False and self.ariesData[i][0] == item[2] and self.ariesData[i][1] == storeHour:
                         storeHour = self.ariesData[i][1]
                         GHA_aries2 = self.ariesData[i][3]
                 GHA_aries = GHA_aries1 + math.abs(GHA_aries2 - GHA_aries1) * (int(item[1].split(":")[1])*60 + int(item[1].split(":")[2]))/3600
-                longitude = SHA_star + GHA_aries 
+                longitude = SHA_star + GHA_aries
                 f.write(latitude)
                 f.write("\t")
                 string = ""
@@ -254,16 +258,16 @@ class Fix:
                 string += str(round(((longitude - int(longitude))*60),1))
                 f.write(string)
                 f.write("\n")
-        
+
             tmpString = self.convertMTime()
             f.write("LOG:\t")
             f.write(tmpString)
             f.write(":\t")
             f.write("Sighting errors:")
             f.write(":\t")
-            f.write(str(errnoNo))
+            f.write(str(self.errnoNo))
             f.write("\n")
-            
+
             tmpString = self.convertMTime()
             f.write("LOG:\t")
             f.write(tmpString)
@@ -271,17 +275,17 @@ class Fix:
             f.write("End of sighting file: ")
             f.write(self.sightingFile)
             f.write("\n")
-        
+
         f.close()
-        
+
         return (self.approximateLatitude,self.approximateLongitude)
 
     def convertCTime(self):
-        ts = os.path.getctime(self.logFile)
+        ts = op.getctime(self.logFile)
         dt = datetime.fromtimestamp(ts, pytz.timezone('Etc/GMT+6'))
         return dt.isoformat(' ')
 
     def convertMTime(self):
-        ts = os.path.getmtime(self.logFile)
+        ts = op.getmtime(self.logFile)
         dt = datetime.fromtimestamp(ts, pytz.timezone('Etc/GMT+6'))
         return dt.isoformat(' ')
