@@ -5,8 +5,7 @@ import os.path
 import time
 import pytz
 import math
-import Angle
-
+import Navigation.prod.Angle as Angle
 class Fix:
     def __init__(self,logFile="log.txt"):
         functionName = "Fix.__init__:"
@@ -40,7 +39,13 @@ class Fix:
             raise ValueError(functionName," sightingFile length is not GE than 1\n")
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," file extension is not xml\n")
-
+        if os.path.exists(sightingFile):
+            with open(fName, 'rb') as f:
+                try:
+                    tmp = f.read()
+                except :
+                    raise IOError(functionName,"sighingFile not able to open or read") 
+            f.close()
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -51,7 +56,7 @@ class Fix:
             f.write("\n")
         f.close()
 
-        return not(os.path.exists(sightingFile))
+        return sightingFile 
 
     def getSightings(self):
         functionName = "Fix.getSightings:"
