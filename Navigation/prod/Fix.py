@@ -1,12 +1,13 @@
 from datetime import datetime
+from datetime import timedelta
 import xml.etree.ElementTree as ET
+import Navigation.prod.Angle as Angle
 import sys
 import os.path as op
 import time
 import pytz
 import math
-import Angle
-
+import csv
 class Fix:
     def __init__(self,logFile="log.txt"):
         functionName = "Fix.__init__:"
@@ -26,12 +27,17 @@ class Fix:
                 f.write(tempStr)
                 f.write(":\t")
                 absPath = op.join(op.dirname(op.abspath(__file__)),self.logFile)
+                f.write("Log file: ")
                 f.write(absPath)
                 f.write("\n")
             f.close()
         else:
            raise ValueError(functionName," logFile name is less than 2 character\n")
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
     def setSightingFile(self,sightingFile):
         functionName = "Fix.setSightingFile:"
         self.sightingFile = sightingFile
@@ -44,12 +50,24 @@ class Fix:
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," sightingFile extension is not xml\n")
 
+<<<<<<< HEAD
         tempStr = self.convertMTime()
+=======
+        with open(sightingFile,'r') as f:
+            try:
+                tmp = f.read()
+            except:
+                raise IOError(functionName,"sightingFile can't be open or read")
+        f.close()
+
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
         sightingAbsPath = op.join(op.dirname(op.abspath(__file__)),self.sightingFile)
+        tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
             f.write(tempStr)
             f.write(":\t")
+            f.write("Sighting file: ")
             f.write(sightingAbsPath)
             f.write("\n")
         f.close()
@@ -154,15 +172,31 @@ class Fix:
         with open(ariesFile,'r') as f:
             data = csv.reader(f,delimiter='\t')
             for row in data:
-                newdate = datetime.strptime(row[0],"%m/%d/%y")
+                newdate = row[0]
                 hh = int(row[1])
+<<<<<<< HEAD
                 degreeMinute = self.angle.setDegreesAndMinutes(row[2])
                 self.ariesData.append(newdate,hh,degreeMinute)
+=======
+                degreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
+                self.ariesData.append((newdate,hh,degreeMinute))
+
         f.close()
-        self.ariesData.sort()
+
+        tmpString = self.convertMTime()
+        with open(self.logFile,'a') as f:
+            f.write("LOG:\t")
+            f.write(tmpString)
+            f.write(":\t")
+            f.write("Aries file: ")
+            f.write(ariesAbsPath)
+            f.write("\n")
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+        f.close()
+
         return ariesAbsPath
 
-    def setStarFile(self,starFile="star.txt"):
+    def setStarFile(self,starFile="stars.txt"):
         functionName = "Fix.setStarFile:"
         self.starFile = starFile
         starAbsPath = op.join(op.dirname(op.abspath(__file__)),self.starFile)
@@ -178,12 +212,26 @@ class Fix:
             data = csv.reader(f,delimiter='\t')
             for row in data:
                 body = row[0]
+<<<<<<< HEAD
                 newdate = datetime.strptime(row[1],"%m/%d/%y")
                 longitudedegreeMinute = self.angle.setDegreesAndMinutes(row[2])
+=======
+                newdate = row[1]
+                longitudedegreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
                 latitudedegreeMinute = row[3]
-                self.starData.append(body,newdate,longitudedegreeMinute,latitudedegreeMinute)
+                self.starData.append((body,newdate,longitudedegreeMinute,latitudedegreeMinute))
         f.close()
-        self.starData.sort()
+
+        tmpString = self.convertMTime()
+        with open(self.logFile,'a') as f:
+            f.write("LOG:\t")
+            f.write(tmpString)
+            f.write(":\t")
+            f.write("Star file: ")
+            f.write(starAbsPath)
+            f.write("\n")
+        f.close()
         return starAbsPath
 
     def getSightings(self):
@@ -200,6 +248,7 @@ class Fix:
         tempStr = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
+<<<<<<< HEAD
                 f.write("LOG:\t")
                 f.write(tempStr)
                 f.write(":\t")
@@ -209,6 +258,8 @@ class Fix:
                 f.write("\t")
                 f.write(item[1])
                 f.write("\t")
+=======
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
 
                 tmp = item[3][0]
                 tmp = tmp.lstrip(' ')
@@ -228,6 +279,7 @@ class Fix:
                 refraction  = (-0.00452*item[3][3])/(273+item[3][2])/math.tan(math.radians(obsevedAltitude))
 
                 adjustedAltitude = obsevedAltitude + dip + refraction
+<<<<<<< HEAD
                 string = ""
                 string +=  str(int(adjustedAltitude))
                 string += "d"
@@ -268,6 +320,66 @@ class Fix:
                 string += str(round(((longitude - int(longitude))*60),1))
                 f.write(string)
                 f.write("\n")
+=======
+                adjustedString = ""
+                adjustedString +=  str(int(adjustedAltitude))
+                adjustedString += "d"
+                adjustedString += str(round(((adjustedAltitude - int(adjustedAltitude))*60),1))
+                index = None
+                latitude = "0d0.0"
+                longitude = 0.0
+
+                for i in range(len(self.starData)):
+                    Date = datetime.strftime(datetime.strptime(self.starData[i][1], "%m/%d/%y").date(),"%Y-%m-%d")
+                    if self.starData[i][0] == item[2]:
+                        if Date == item[0]:
+                            index = i
+                            break
+                        elif Date < item[0]:
+                            index = i
+                if index != None:
+                    flag = True
+                    for i in range(len(self.ariesData)):
+                        Date = datetime.strftime(datetime.strptime(self.ariesData[i][0], "%m/%d/%y").date(),"%Y-%m-%d")
+                        if  Date == item[0] and int(self.ariesData[i][1]) == int(item[1].split(":")[0]) and flag == True:
+                            if (int(self.ariesData[i][1]) + 1) % 24 == 0:
+                                storeHour = 0
+                                fixedDate = datetime.strftime((datetime.strptime(self.ariesData[i][0], "%m/%d/%y").date() + timedelta(days=1)),"%Y-%m-%d")
+                            else:
+                                storeHour = int(self.ariesData[i][1])+1
+                                fixedDate = datetime.strftime(datetime.strptime(self.ariesData[i][0], "%m/%d/%y").date(),"%Y-%m-%d")
+                            GHA_aries1 = self.ariesData[i][2]
+                            flag = False
+                        if flag == False and Date == fixedDate and int(self.ariesData[i][1]) == storeHour:
+                            storeHour = self.ariesData[i][1]
+                            GHA_aries2 = self.ariesData[i][2]
+                    SHA_star = self.starData[index][2]
+                    latitude = self.starData[index][3]
+                    GHA_aries = GHA_aries1 + math.fabs(GHA_aries2 - GHA_aries1) * (int(item[1].split(":")[1])*60 + int(item[1].split(":")[2]))/3600
+                    longitude = (SHA_star + GHA_aries) % 360
+                    string = ""
+                    string +=  str(int(longitude))
+                    string += "d"
+                    string += str(round(((longitude - int(longitude))*60),1))
+                    f.write("LOG:\t")
+                    tmpString = self.convertMTime()
+                    f.write(tmpString)
+                    f.write(":\t")
+                    f.write(item[2])
+                    f.write("\t")
+                    f.write(item[0])
+                    f.write("\t")
+                    f.write(item[1])
+                    f.write("\t")
+                    f.write(adjustedString)
+                    f.write("\t")
+                    f.write(latitude)
+                    f.write("\t")
+                    f.write(string)
+                    f.write("\n")
+                else:
+                    self.errorNo += 1
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
 
             tempStr = self.convertMTime()
             f.write("LOG:\t")
@@ -275,6 +387,7 @@ class Fix:
             f.write(":\t")
             f.write("Sighting errors:")
             f.write(":\t")
+<<<<<<< HEAD
             f.write(str(self.errnoNo))
             f.write("\n")
 
@@ -284,6 +397,9 @@ class Fix:
             f.write(":\t")
             f.write("End of sighting file: ")
             f.write(self.sightingFile)
+=======
+            f.write(str(self.errorNo))
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
             f.write("\n")
 
         f.close()
