@@ -7,6 +7,5 @@ def main():
     starFilePath = theFix.setStarFile('star.txt')
     ariesFilePath = theFix.setAriesFile('aries.txt')
     approximatePosition = theFix.getSightings()
-
 if __name__ ==  "__main__":
     main()
