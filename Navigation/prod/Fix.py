@@ -69,35 +69,28 @@ class Fix:
         for child in root.findall('sighting'):
 
             if child.find('body') == None :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A body tag is missing")
+
             if len(child.find('body').text) ==  0 :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A body text  is missing")
 
             if child.find('date') == None :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A date tag is missing")
 
             if len(child.find('date').text) ==  0 :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A date text  is missing")
 
             if child.find('time') == None :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A time tag is missing")
 
             if len(child.find('time').text) ==  0 :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A time text  is missing")
 
             if child.find('observation') == None :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A observation tag is missing")
 
             if len(child.find('observation').text) ==  0 :
-                self.errorNo += 1
-                continue
+                raise ValueError(functionName,"A observation text  is missing")
 
             tmp = child.find('observation').text
             tmp = tmp.lstrip(' ')
