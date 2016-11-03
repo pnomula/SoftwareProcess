@@ -51,7 +51,6 @@ class Fix:
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," sightingFile extension is not xml\n")
 
-        tmpString = self.convertMTime()
         with open(sightingFile,'r') as f:
             try:
                 tmp = f.read()
@@ -245,6 +244,7 @@ class Fix:
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
+<<<<<<< HEAD
                 f.write("LOG:\t")
                 f.write(tmpString)
                 f.write(":\t")
@@ -259,6 +259,8 @@ class Fix:
 >>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
 =======
 >>>>>>> 58cb7ca... Final Commit after merging CA03
+=======
+>>>>>>> 7c4ffd2... Final Commit with removed few print errors.
 
                 tmp = item[3][0]
                 tmp = tmp.lstrip(' ')
@@ -372,8 +374,8 @@ class Fix:
                     string +=  str(int(longitude))
                     string += "d"
                     string += str(round(((longitude - int(longitude))*60),1))
-                    f.write("LOG:\t")
                     tmpString = self.convertMTime()
+                    f.write("LOG:\t")
                     f.write(tmpString)
                     f.write(":\t")
                     f.write(item[2])

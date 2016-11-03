@@ -4,7 +4,7 @@ def main():
     # ---------- constructor ----------
     theFix = Fix.Fix()
     sightingFilePath = theFix.setSightingFile("sightings.xml")
-    starFilePath = theFix.setStarFile('star.txt')
+    starFilePath = theFix.setStarFile('stars.txt')
     ariesFilePath = theFix.setAriesFile('aries.txt')
     approximatePosition = theFix.getSightings()
 if __name__ ==  "__main__":
