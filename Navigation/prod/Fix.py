@@ -18,13 +18,13 @@ class Fix:
            raise ValueError(functionName," logFile input is not string\n")
         if len(self.logFile) > 1:
             if (op.exists(self.logFile)):
-                tempStr = self.convertMTime()
+                tmpString = self.convertMTime()
             else:
                 open(self.logFile,'w').close()
-                tempStr = self.convertCTime()
+                tmpString = self.convertCTime()
             with open(self.logFile,'a') as f:
                 f.write("LOG:\t")
-                f.write(tempStr)
+                f.write(tmpString)
                 f.write(":\t")
                 absPath = op.join(op.dirname(op.abspath(__file__)),self.logFile)
                 f.write("Log file: ")
@@ -33,11 +33,12 @@ class Fix:
             f.close()
         else:
            raise ValueError(functionName," logFile name is less than 2 character\n")
+
 <<<<<<< HEAD
-    
+>>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
 =======
 
->>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+>>>>>>> 58cb7ca... Final Commit after merging CA03
     def setSightingFile(self,sightingFile):
         functionName = "Fix.setSightingFile:"
         self.sightingFile = sightingFile
@@ -50,9 +51,7 @@ class Fix:
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," sightingFile extension is not xml\n")
 
-<<<<<<< HEAD
-        tempStr = self.convertMTime()
-=======
+        tmpString = self.convertMTime()
         with open(sightingFile,'r') as f:
             try:
                 tmp = f.read()
@@ -60,12 +59,15 @@ class Fix:
                 raise IOError(functionName,"sightingFile can't be open or read")
         f.close()
 
+<<<<<<< HEAD
 >>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+=======
+>>>>>>> 58cb7ca... Final Commit after merging CA03
         sightingAbsPath = op.join(op.dirname(op.abspath(__file__)),self.sightingFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
-            f.write(tempStr)
+            f.write(tmpString)
             f.write(":\t")
             f.write("Sighting file: ")
             f.write(sightingAbsPath)
@@ -174,10 +176,6 @@ class Fix:
             for row in data:
                 newdate = row[0]
                 hh = int(row[1])
-<<<<<<< HEAD
-                degreeMinute = self.angle.setDegreesAndMinutes(row[2])
-                self.ariesData.append(newdate,hh,degreeMinute)
-=======
                 degreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
                 self.ariesData.append((newdate,hh,degreeMinute))
 
@@ -212,13 +210,12 @@ class Fix:
             data = csv.reader(f,delimiter='\t')
             for row in data:
                 body = row[0]
-<<<<<<< HEAD
-                newdate = datetime.strptime(row[1],"%m/%d/%y")
-                longitudedegreeMinute = self.angle.setDegreesAndMinutes(row[2])
-=======
                 newdate = row[1]
                 longitudedegreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
+<<<<<<< HEAD
 >>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+=======
+>>>>>>> 58cb7ca... Final Commit after merging CA03
                 latitudedegreeMinute = row[3]
                 self.starData.append((body,newdate,longitudedegreeMinute,latitudedegreeMinute))
         f.close()
@@ -245,12 +242,11 @@ class Fix:
         if (self.starFile == None):
             raise ValueError(functionName,"No star file has been set ")
 
-        tempStr = self.convertMTime()
+        tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
-<<<<<<< HEAD
                 f.write("LOG:\t")
-                f.write(tempStr)
+                f.write(tmpString)
                 f.write(":\t")
                 f.write(item[2])
                 f.write("\t")
@@ -258,8 +254,11 @@ class Fix:
                 f.write("\t")
                 f.write(item[1])
                 f.write("\t")
+<<<<<<< HEAD
 =======
 >>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+=======
+>>>>>>> 58cb7ca... Final Commit after merging CA03
 
                 tmp = item[3][0]
                 tmp = tmp.lstrip(' ')
@@ -279,6 +278,7 @@ class Fix:
                 refraction  = (-0.00452*item[3][3])/(273+item[3][2])/math.tan(math.radians(obsevedAltitude))
 
                 adjustedAltitude = obsevedAltitude + dip + refraction
+<<<<<<< HEAD
 <<<<<<< HEAD
                 string = ""
                 string +=  str(int(adjustedAltitude))
@@ -330,6 +330,17 @@ class Fix:
                 longitude = 0.0
 
                 for i in range(len(self.starData)):
+=======
+                adjustedString = ""
+                adjustedString +=  str(int(adjustedAltitude))
+                adjustedString += "d"
+                adjustedString += str(round(((adjustedAltitude - int(adjustedAltitude))*60),1))
+                index = None
+                latitude = "0d0.0"
+                longitude = 0.0
+
+                for i in range(len(self.starData)):
+>>>>>>> 58cb7ca... Final Commit after merging CA03
                     Date = datetime.strftime(datetime.strptime(self.starData[i][1], "%m/%d/%y").date(),"%Y-%m-%d")
                     if self.starData[i][0] == item[2]:
                         if Date == item[0]:
@@ -379,27 +390,22 @@ class Fix:
                     f.write("\n")
                 else:
                     self.errorNo += 1
+<<<<<<< HEAD
 >>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+=======
+>>>>>>> 58cb7ca... Final Commit after merging CA03
 
-            tempStr = self.convertMTime()
+            tmpString = self.convertMTime()
             f.write("LOG:\t")
-            f.write(tempStr)
+            f.write(tmpString)
             f.write(":\t")
             f.write("Sighting errors:")
             f.write(":\t")
-<<<<<<< HEAD
-            f.write(str(self.errnoNo))
-            f.write("\n")
-
-            tempStr = self.convertMTime()
-            f.write("LOG:\t")
-            f.write(tempStr)
-            f.write(":\t")
-            f.write("End of sighting file: ")
-            f.write(self.sightingFile)
-=======
             f.write(str(self.errorNo))
+<<<<<<< HEAD
 >>>>>>> fef4e79... Fixed with all stars and aries file input with exception like sighting
+=======
+>>>>>>> 58cb7ca... Final Commit after merging CA03
             f.write("\n")
 
         f.close()
