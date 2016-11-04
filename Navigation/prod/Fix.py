@@ -90,7 +90,7 @@ class Fix:
                 raise ValueError(functionName,"A date text is missing")
 
             tempS = child.find('date').text.split('-')
-            if int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >28 and int(tempS[1]) ==02 :
+            if int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
                 raise ValueError(functionName,"A date is invalid")
 
             if child.find('time') == None :
