@@ -3,21 +3,22 @@ from datetime import timedelta
 import xml.etree.ElementTree as ET
 import Navigation.prod.Angle as Angle
 import sys
-import os.path as op
+import os
 import time
 import pytz
 import math
+import re
 import csv
 class Fix:
     def __init__(self,logFile="log.txt"):
         functionName = "Fix.__init__:"
-        self.anAngle = Angle.Angle()
+        self.angle = Angle.Angle()
         self.logFile = logFile
         self.sightingFile = None
         if (not(isinstance(self.logFile,str))):
            raise ValueError(functionName," logFile input is not string\n")
         if len(logFile) > 1:
-            if (op.exists(self.logFile)):
+            if (os.path.exists(self.logFile)):
                 tmpString = self.convertMTime()
             else:
                 open(self.logFile,'w').close()
@@ -26,7 +27,7 @@ class Fix:
                 f.write("LOG:\t")
                 f.write(tmpString)
                 f.write(":\t")
-                absPath = op.join(op.dirname(op.abspath(__file__)),self.logFile)
+                absPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.logFile)
                 f.write("Log file: ")
                 f.write(absPath)
                 f.write("\n")
@@ -34,26 +35,32 @@ class Fix:
         else:
            raise ValueError(functionName," logFile name is less than 2 character\n")
 
-    def setSightingFile(self,sightingFile):
+    def setSightingFile(self,sightingFile=None):
         functionName = "Fix.setSightingFile:"
         self.sightingFile = sightingFile
         self.errorNo = 0
+        if sightingFile == None:
+            raise ValueError(functionName," no sightingFile is passed\n")
         if (not(isinstance(sightingFile,str))):
             raise ValueError(functionName," sightingFile input is not string\n")
         tmp = sightingFile.split('.')
+        if len(tmp) == 1 :
+            raise ValueError(functionName," sightingFile input is xml file with extention.\n")
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," sightingFile length is not GE than 1\n")
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," file extension is not xml\n")
+        if os.path.exists(sightingFile):
+            with open(self.sightingFile, 'r') as f:
+                try:
+                    tmp = f.read()
+                except :
+                    raise IOError(functionName,"sighingFile not able to open or read")
+            f.close()
+        else:
+            raise IOError(functionName,"sighingFile name path is invalid")
 
-        with open(sightingFile,'r') as f:
-            try:
-                tmp = f.read()
-            except:
-                raise IOError(functionName,"sightingFile can't be open or read")
-        f.close()
-
-        sightingAbsPath = op.join(op.dirname(op.abspath(__file__)),self.sightingFile)
+        sightingAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.sightingFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -71,31 +78,59 @@ class Fix:
             if child.find('body') == None :
                 raise ValueError(functionName,"A body tag is missing")
 
-            if len(child.find('body').text) ==  0 :
+            if child.find('body').text ==  None :
                 raise ValueError(functionName,"A body text  is missing")
+
+            tempS = child.find('body').text
+            if len(tempS) == 0:
+                raise ValueError(functionName,"A body text  is empty")
 
             if child.find('date') == None :
                 raise ValueError(functionName,"A date tag is missing")
 
-            if len(child.find('date').text) ==  0 :
-                raise ValueError(functionName,"A date text  is missing")
+            if child.find('date').text == None :
+                raise ValueError(functionName,"A date text is missing")
+
+            tempS = child.find('date').text.split('-')
+            if int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
+                raise ValueError(functionName,"A date is invalid")
 
             if child.find('time') == None :
                 raise ValueError(functionName,"A time tag is missing")
 
-            if len(child.find('time').text) ==  0 :
+            if child.find('time').text ==  None :
                 raise ValueError(functionName,"A time text  is missing")
+
+            tempS = child.find('time').text.split(':')
+            if len(tempS) == 1:
+                raise ValueError(functionName,"A time is invalid")
 
             if child.find('observation') == None :
                 raise ValueError(functionName,"A observation tag is missing")
 
-            if len(child.find('observation').text) ==  0 :
+            if child.find('observation').text ==  None :
                 raise ValueError(functionName,"A observation text  is missing")
 
             tmp = child.find('observation').text
             tmp = tmp.lstrip(' ')
             tmp = tmp.rstrip(' ')
-            observation = self.anAngle.setDegreesAndMinutes(tmp)
+            regex = r"([-,0-9]*?[\.,0-9]*)d([0-9]*?[\.,0-9]*)"
+            match = re.search(regex,tmp)
+            if match == None:
+                raise ValueError(functionName," a observation text is invalid")
+
+            if child.find('temperature') != None and child.find('temperature').text != None and (int(child.find('temperature').text) < -20 or int(child.find('temperature').text) > 120 ):
+                raise ValueError(functionName," a temperature text is invalid")
+
+            if child.find('horizon') != None and child.find('horizon').text != None and ( child.find('horizon').text.lower() != 'artificial' and child.find('horizon').text.lower() != 'natural' ):
+                raise ValueError(functionName," a horizon text is invalid")
+
+            if child.find('height') != None and child.find('height').text != None and not re.match("^\d+?\.\d+?$",child.find('height').text):
+                print(child.find('height').text)
+                raise ValueError(functionName," a height text is invalid")
+
+            if child.find('pressure') != None and child.find('pressure').text != None and re.match("^\d+?\.\d+?$",child.find('pressure').text):
+                raise ValueError(functionName," a pressure text is invalid")
 
         container = root.findall("sighting")
         data = []
@@ -111,22 +146,22 @@ class Fix:
 
             if elem.find('height') == None:
                 tmp.append(0)
-            elif elem.find('height').text > 0:
-                tmp.append(elem.find('height').text)
+            elif float(elem.find('height').text) > 0:
+                tmp.append(float(elem.find('height').text))
             else:
                 tmp.append(0)
 
             if elem.find('temperature') == None:
                 tmp.append(5*float(72-32)/9)
-            elif elem.find('temperature').text > -20 and elem.find('temperature').text < 120:
+            elif int(elem.find('temperature').text) > -20 and int(elem.find('temperature').text) < 120:
                 tmp.append(5*(float(elem.find('temperature').text)-32)/9)
             else:
                 tmp.append(5*float(72-32)/9)
 
             if elem.find('pressure') == None:
                 tmp.append(1010)
-            elif elem.find('pressure').text > 100 and elem.find('temperature').text < 1100:
-                tmp.append(elem.find('pressure').text)
+            elif int(elem.find('pressure').text) > 100 and int(elem.find('pressure').text) < 1100:
+                tmp.append(float(elem.find('pressure').text))
             else:
                 tmp.append(1010)
 
@@ -142,28 +177,34 @@ class Fix:
 
         return sightingAbsPath
 
-    def setAriesFile(self,ariesFile="aries.txt"):
+    def setAriesFile(self,ariesFile=None):
         functionName = "Fix.setAriesFile:"
         self.ariesFile = ariesFile
-        ariesAbsPath = op.join(op.dirname(op.abspath(__file__)),self.ariesFile)
+        if self.ariesFile == None:
+            raise ValueError(functionName," AriesFile is None\n")
         if (not(isinstance(ariesFile,str))):
             raise ValueError(functionName," AriesFile input is not string\n")
         tmp = ariesFile.split('.')
+        if len(tmp) == 1 :
+            raise ValueError(functionName," AriesFile file name is invalid.\n")
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," AriesFile length is not GE than 1\n")
         if tmp[1] !=  "txt" :
             raise ValueError(functionName," file extension is not txt\n")
         self.ariesData = []
-        with open(ariesFile,'r') as f:
-            data = csv.reader(f,delimiter='\t')
-            for row in data:
-                newdate = row[0]
-                hh = int(row[1])
-                degreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
-                self.ariesData.append((newdate,hh,degreeMinute))
+        if os.path.exists(ariesFile):
+            with open(ariesFile,'r') as f:
+                data = csv.reader(f,delimiter='\t')
+                for row in data:
+                    newdate = row[0]
+                    hh = int(row[1])
+                    degreeMinute = self.angle.setDegreesAndMinutes(row[2])
+                    self.ariesData.append((newdate,hh,degreeMinute))
+            f.close()
+        else:
+            raise IOError(functionName,"AriesFile path is invalid")
 
-        f.close()
-
+        ariesAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.ariesFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -176,28 +217,34 @@ class Fix:
 
         return ariesAbsPath
 
-    def setStarFile(self,starFile="stars.txt"):
+    def setStarFile(self,starFile=None):
         functionName = "Fix.setStarFile:"
         self.starFile = starFile
-        starAbsPath = op.join(op.dirname(op.abspath(__file__)),self.starFile)
+        if self.starFile == None:
+            raise ValueError(functionName," starFile is None\n")
         if (not(isinstance(starFile,str))):
             raise ValueError(functionName," StarFile input is not string\n")
         tmp = starFile.split('.')
+        if len(tmp) == 1 :
+            raise ValueError(functionName," Star File file name is invalid.\n")
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," StarFile length is not GE than 1\n")
         if tmp[1] !=  "txt" :
             raise ValueError(functionName," file extension is not txt\n")
         self.starData = []
-        with open(starFile,'r') as f:
-            data = csv.reader(f,delimiter='\t')
-            for row in data:
-                body = row[0]
-                newdate = row[1]
-                longitudedegreeMinute = self.anAngle.setDegreesAndMinutes(row[2])
-                latitudedegreeMinute = row[3]
-                self.starData.append((body,newdate,longitudedegreeMinute,latitudedegreeMinute))
-        f.close()
-
+        if os.path.exists(starFile):
+            with open(starFile,'r') as f:
+                data = csv.reader(f,delimiter='\t')
+                for row in data:
+                    body = row[0]
+                    newdate = row[1]
+                    longitudedegreeMinute = self.angle.setDegreesAndMinutes(row[2])
+                    latitudedegreeMinute = row[3]
+                    self.starData.append((body,newdate,longitudedegreeMinute,latitudedegreeMinute))
+            f.close()
+        else:
+            raise IOError(functionName,"starFile path is invalid")
+        starAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.starFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -228,13 +275,13 @@ class Fix:
                 tmp = tmp.lstrip(' ')
                 tmp = tmp.rstrip(' ')
 
-                obsevedAltitude = self.anAngle.setDegreesAndMinutes(tmp)
-                tmpAltitude = self.anAngle.setDegreesAndMinutes("0d0.1")
+                obsevedAltitude = self.angle.setDegreesAndMinutes(tmp)
+                tmpAltitude = self.angle.setDegreesAndMinutes("0d0.1")
 
                 if obsevedAltitude < tmpAltitude:
                     raise ValueError(functionName," observerAltitude is LE 0.1 arc minute\n")
 
-                if item[3][4] == "natural":
+                if item[3][4].lower() == "natural":
                     dip = (-0.97*math.sqrt(item[3][1]))/60
                 else:
                     dip = 0
@@ -276,7 +323,8 @@ class Fix:
                             GHA_aries2 = self.ariesData[i][2]
                     SHA_star = self.starData[index][2]
                     latitude = self.starData[index][3]
-                    GHA_aries = GHA_aries1 + math.fabs(GHA_aries2 - GHA_aries1) * (int(item[1].split(":")[1])*60 + int(item[1].split(":")[2]))/3600
+                    second = int(item[1].split(":")[1])*60 + int(item[1].split(":")[2])
+                    GHA_aries = GHA_aries1 + float(math.fabs(GHA_aries2 - GHA_aries1) * second)/3600
                     longitude = (SHA_star + GHA_aries) % 360
                     string = ""
                     string +=  str(int(longitude))
@@ -315,11 +363,11 @@ class Fix:
         return (self.approximateLatitude,self.approximateLongitude)
 
     def convertCTime(self):
-        ts = op.getctime(self.logFile)
+        ts = os.path.getctime(self.logFile)
         dt = datetime.fromtimestamp(ts, pytz.timezone('Etc/GMT+6'))
         return dt.isoformat(' ')
 
     def convertMTime(self):
-        ts = op.getmtime(self.logFile)
+        ts = os.path.getmtime(self.logFile)
         dt = datetime.fromtimestamp(ts, pytz.timezone('Etc/GMT+6'))
         return dt.isoformat(' ')
