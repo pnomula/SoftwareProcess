@@ -1,15 +1,16 @@
 from datetime import datetime
 import xml.etree.ElementTree as ET
+import Navigation.prod.Angle as Angle
 import sys
 import os.path
 import time
 import pytz
 import math
-import Navigation.prod.Angle as Angle
+import re
 class Fix:
     def __init__(self,logFile="log.txt"):
         functionName = "Fix.__init__:"
-        self.anAngle = Angle.Angle()
+        self.angle = Angle.Angle()
         self.logFile = logFile
         self.sightingFile = None
         if (not(isinstance(self.logFile,str))):
@@ -29,22 +30,26 @@ class Fix:
         else:
            raise ValueError(functionName," logFile name is less than 2 character\n")
 
-    def setSightingFile(self,sightingFile):
+    def setSightingFile(self,sightingFile=None):
         functionName = "Fix.setSightingFile:"
         self.sightingFile = sightingFile
+        if sightingFile == None:
+            raise ValueError(functionName," no sightingFile is passed\n")
         if (not(isinstance(sightingFile,str))):
             raise ValueError(functionName," sightingFile input is not string\n")
         tmp = sightingFile.split('.')
+        if len(tmp) == 1 :
+            raise ValueError(functionName," sightingFile input is xml file with extention.\n")
         if len(tmp[0])  <= 1:
             raise ValueError(functionName," sightingFile length is not GE than 1\n")
         if tmp[1] !=  "xml" :
             raise ValueError(functionName," file extension is not xml\n")
         if os.path.exists(sightingFile):
-            with open(fName, 'rb') as f:
+            with open(self.sightingFile, 'r') as f:
                 try:
                     tmp = f.read()
                 except :
-                    raise IOError(functionName,"sighingFile not able to open or read") 
+                    raise IOError(functionName,"sighingFile not able to open or read")
             f.close()
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
@@ -56,7 +61,7 @@ class Fix:
             f.write("\n")
         f.close()
 
-        return sightingFile 
+        return sightingFile
 
     def getSightings(self):
         functionName = "Fix.getSightings:"
@@ -71,31 +76,59 @@ class Fix:
             if child.find('body') == None :
                 raise ValueError(functionName,"A body tag is missing")
 
-            if len(child.find('body').text) ==  0 :
+            if child.find('body').text ==  None :
                 raise ValueError(functionName,"A body text  is missing")
+
+            tempS = child.find('body').text
+            if len(tempS) == 0:
+                raise ValueError(functionName,"A body text  is empty")
 
             if child.find('date') == None :
                 raise ValueError(functionName,"A date tag is missing")
 
-            if len(child.find('date').text) ==  0 :
-                raise ValueError(functionName,"A date text  is missing")
+            if child.find('date').text == None :
+                raise ValueError(functionName,"A date text is missing")
+
+            tempS = child.find('date').text.split('-')
+            if int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >28 and int(tempS[1]) ==02 :
+                raise ValueError(functionName,"A date is invalid")
 
             if child.find('time') == None :
                 raise ValueError(functionName,"A time tag is missing")
 
-            if len(child.find('time').text) ==  0 :
+            if child.find('time').text ==  None :
                 raise ValueError(functionName,"A time text  is missing")
+
+            tempS = child.find('time').text.split(':')
+            if len(tempS) == 1:
+                raise ValueError(functionName,"A time is invalid")
 
             if child.find('observation') == None :
                 raise ValueError(functionName,"A observation tag is missing")
 
-            if len(child.find('observation').text) ==  0 :
+            if child.find('observation').text ==  None :
                 raise ValueError(functionName,"A observation text  is missing")
 
             tmp = child.find('observation').text
             tmp = tmp.lstrip(' ')
             tmp = tmp.rstrip(' ')
-            observation = self.anAngle.setDegreesAndMinutes(tmp)
+            regex = r"([-,0-9]*?[\.,0-9]*)d([0-9]*?[\.,0-9]*)"
+            match = re.search(regex,tmp)
+            if match == None:
+                raise ValueError(functionName," a observation text is invalid")
+
+            if child.find('temperature') != None and child.find('temperature').text != None and (int(child.find('temperature').text) < -20 or int(child.find('temperature').text) > 120 ):
+                raise ValueError(functionName," a temperature text is invalid")
+
+            if child.find('horizon') != None and child.find('horizon').text != None and ( child.find('horizon').text.lower() != 'artificial' and child.find('horizon').text.lower() != 'natural' ):
+                raise ValueError(functionName," a horizon text is invalid")
+
+            if child.find('height') != None and child.find('height').text != None and not re.match("^\d+?\.\d+?$",child.find('height').text):
+                print(child.find('height').text)
+                raise ValueError(functionName," a height text is invalid")
+
+            if child.find('pressure') != None and child.find('pressure').text != None and re.match("^\d+?\.\d+?$",child.find('pressure').text):
+                raise ValueError(functionName," a pressure text is invalid")
 
         container = root.findall("sighting")
         data = []
@@ -111,22 +144,22 @@ class Fix:
 
             if elem.find('height') == None:
                 tmp.append(0)
-            elif elem.find('height').text > 0:
-                tmp.append(elem.find('height').text)
+            elif float(elem.find('height').text) > 0:
+                tmp.append(float(elem.find('height').text))
             else:
                 tmp.append(0)
 
             if elem.find('temperature') == None:
                 tmp.append(5*float(72-32)/9)
-            elif elem.find('temperature').text > -20 and elem.find('temperature').text < 120:
+            elif int(elem.find('temperature').text) > -20 and int(elem.find('temperature').text) < 120:
                 tmp.append(5*(float(elem.find('temperature').text)-32)/9)
             else:
                 tmp.append(5*float(72-32)/9)
 
             if elem.find('pressure') == None:
                 tmp.append(1010)
-            elif elem.find('pressure').text > 100 and elem.find('temperature').text < 1100:
-                tmp.append(elem.find('pressure').text)
+            elif int(elem.find('pressure').text) > 100 and int(elem.find('pressure').text) < 1100:
+                tmp.append(float(elem.find('pressure').text))
             else:
                 tmp.append(1010)
 
@@ -155,13 +188,13 @@ class Fix:
                 tmp = tmp.lstrip(' ')
                 tmp = tmp.rstrip(' ')
 
-                obsevedAltitude = self.anAngle.setDegreesAndMinutes(tmp)
-                tmpAltitude = self.anAngle.setDegreesAndMinutes("0d0.1")
+                obsevedAltitude = self.angle.setDegreesAndMinutes(tmp)
+                tmpAltitude = self.angle.setDegreesAndMinutes("0d0.1")
 
                 if obsevedAltitude < tmpAltitude:
                     raise ValueError(functionName," observerAltitude is LE 0.1 arc minute\n")
 
-                if item[3][4] == "natural":
+                if item[3][4].lower() == "natural":
                     dip = (-0.97*math.sqrt(item[3][1]))/60
                 else:
                     dip = 0

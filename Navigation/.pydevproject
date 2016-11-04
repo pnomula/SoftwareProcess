@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?eclipse-pydev version="1.0"?><pydev_project>
 <<<<<<< HEAD
+<<<<<<< HEAD
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.7</pydev_property>
 =======
@@ -12,4 +13,8 @@
 <path>/Volumes/Maverick/Dropbox/Workspace/SoftwareProcess</path>
 </pydev_pathproperty>
 >>>>>>> 9a85e27... Final Commit
+=======
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.7</pydev_property>
+>>>>>>> 5e0b1fe...  Fixing all the errors and warning according to test cases
 </pydev_project>
