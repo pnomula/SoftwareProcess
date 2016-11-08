@@ -15,6 +15,8 @@ class Fix:
         self.angle = Angle.Angle()
         self.logFile = logFile
         self.sightingFile = None
+        self.starData = []
+        self.ariesData = []
         if (not(isinstance(self.logFile,str))):
            raise ValueError(functionName," logFile input is not string\n")
         if len(logFile) > 1:
@@ -70,69 +72,97 @@ class Fix:
             f.write(sightingAbsPath)
             f.write("\n")
         f.close()
-
+        container = []
         tree = ET.parse(self.sightingFile)
         root = tree.getroot()
         for child in root.findall('sighting'):
-
+            flag = 0
             if child.find('body') == None :
-                raise ValueError(functionName,"A body tag is missing")
+                self.errorNo += 1
+                root.remove(child)
+                continue
+            if child.find('body') != None and child.find('body').text ==  None:
+                self.errorNo += 1
+                root.remove(child)
+                continue
+                
+            if child.find('body') != None and child.find('body').text !=  None and len(child.find('body').text) == 0 :
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
-            if child.find('body').text ==  None :
-                raise ValueError(functionName,"A body text  is missing")
+            if child.find('date') == None:
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
-            tempS = child.find('body').text
-            if len(tempS) == 0:
-                raise ValueError(functionName,"A body text  is empty")
-
-            if child.find('date') == None :
-                raise ValueError(functionName,"A date tag is missing")
-
-            if child.find('date').text == None :
-                raise ValueError(functionName,"A date text is missing")
-
+            if child.find('data') != None and child.find('date').text == None :
+                self.errorNo += 1
+                root.remove(child)
+                continue
+            
             tempS = child.find('date').text.split('-')
-            if int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
-                raise ValueError(functionName,"A date is invalid")
+            if child.find('data') != None and child.find('date').text != None and int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
             if child.find('time') == None :
-                raise ValueError(functionName,"A time tag is missing")
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
-            if child.find('time').text ==  None :
-                raise ValueError(functionName,"A time text  is missing")
+            if child.find('time') != None and child.find('time').text ==  None :
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
             tempS = child.find('time').text.split(':')
-            if len(tempS) == 1:
-                raise ValueError(functionName,"A time is invalid")
-
+            if child.find('time') != None and child.find('time').text !=  None and len(tempS) == 1:
+                self.errorNo += 1
+                root.remove(child)
+                continue
             if child.find('observation') == None :
-                raise ValueError(functionName,"A observation tag is missing")
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
-            if child.find('observation').text ==  None :
-                raise ValueError(functionName,"A observation text  is missing")
+            if child.find('observation') != None and child.find('observation').text ==  None :
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
-            tmp = child.find('observation').text
-            tmp = tmp.lstrip(' ')
-            tmp = tmp.rstrip(' ')
-            regex = r"([-,0-9]*?[\.,0-9]*)d([0-9]*?[\.,0-9]*)"
-            match = re.search(regex,tmp)
-            if match == None:
-                raise ValueError(functionName," a observation text is invalid")
-
+            if child.find('observation') != None and child.find('observation').text !=  None :
+                tmp = child.find('observation').text
+                tmp = tmp.lstrip(' ')
+                tmp = tmp.rstrip(' ')
+                regex = r"([-,0-9]*?[\.,0-9]*)d([0-9]*?[\.,0-9]*)"
+                match = re.search(regex,tmp)
+                if match == None:
+                    self.errorNo += 1
+                    root.remove(child)
+                    continue
             if child.find('temperature') != None and child.find('temperature').text != None and (int(child.find('temperature').text) < -20 or int(child.find('temperature').text) > 120 ):
-                raise ValueError(functionName," a temperature text is invalid")
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
             if child.find('horizon') != None and child.find('horizon').text != None and ( child.find('horizon').text.lower() != 'artificial' and child.find('horizon').text.lower() != 'natural' ):
-                raise ValueError(functionName," a horizon text is invalid")
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
             if child.find('height') != None and child.find('height').text != None and not re.match("^\d+?\.\d+?$",child.find('height').text):
-                print(child.find('height').text)
-                raise ValueError(functionName," a height text is invalid")
+                self.errorNo += 1
+                root.remove(child)
+                continue
 
             if child.find('pressure') != None and child.find('pressure').text != None and re.match("^\d+?\.\d+?$",child.find('pressure').text):
-                raise ValueError(functionName," a pressure text is invalid")
-
-        container = root.findall("sighting")
+                self.errorNo += 1
+                root.remove(child)
+                continue
+        
+        container = root.findall('sighting')
         data = []
         for elem in container:
             tmp = []
@@ -191,7 +221,6 @@ class Fix:
             raise ValueError(functionName," AriesFile length is not GE than 1\n")
         if tmp[1] !=  "txt" :
             raise ValueError(functionName," file extension is not txt\n")
-        self.ariesData = []
         if os.path.exists(ariesFile):
             with open(ariesFile,'r') as f:
                 data = csv.reader(f,delimiter='\t')
@@ -202,7 +231,7 @@ class Fix:
                     self.ariesData.append((newdate,hh,degreeMinute))
             f.close()
         else:
-            raise IOError(functionName,"AriesFile path is invalid")
+            raise ValueError(functionName,"AriesFile path is invalid")
 
         ariesAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.ariesFile)
         tmpString = self.convertMTime()
@@ -231,7 +260,6 @@ class Fix:
             raise ValueError(functionName," StarFile length is not GE than 1\n")
         if tmp[1] !=  "txt" :
             raise ValueError(functionName," file extension is not txt\n")
-        self.starData = []
         if os.path.exists(starFile):
             with open(starFile,'r') as f:
                 data = csv.reader(f,delimiter='\t')
@@ -243,7 +271,7 @@ class Fix:
                     self.starData.append((body,newdate,longitudedegreeMinute,latitudedegreeMinute))
             f.close()
         else:
-            raise IOError(functionName,"starFile path is invalid")
+            raise ValueError(functionName,"starFile path is invalid")
         starAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.starFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
@@ -262,11 +290,11 @@ class Fix:
         self.approximateLongitude = "0d0.0"
         if (self.sightingFile == None):
             raise ValueError(functionName,"no sighting file has been set ")
-        if (self.ariesFile == None):
-            raise ValueError(functionName,"no aries file has been set ")
-        if (self.starFile == None):
-            raise ValueError(functionName,"no star file has been set ")
-
+#        if (self.ariesFile == None):
+#            raise ValueError(functionName,"no aries file has been set ")
+#        if (self.starFile == None):
+#            raise ValueError(functionName,"no star file has been set ")
+#
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
