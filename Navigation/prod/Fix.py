@@ -1,7 +1,7 @@
 from datetime import datetime
 from datetime import timedelta
 import xml.etree.ElementTree as ET
-import Navigation.prod.Angle as Angle
+import Angle as Angle
 import sys
 import os
 import time
@@ -29,7 +29,7 @@ class Fix:
                 f.write("LOG:\t")
                 f.write(tmpString)
                 f.write(":\t")
-                absPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.logFile)
+                absPath = os.path.join(os.getcwd(),self.logFile)
                 f.write("Log file: ")
                 f.write(absPath)
                 f.write("\n")
@@ -62,7 +62,7 @@ class Fix:
         else:
             raise IOError(functionName,"sighingFile name path is invalid")
 
-        sightingAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.sightingFile)
+        sightingAbsPath = os.path.join(os.getcwd(),self.sightingFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -85,7 +85,7 @@ class Fix:
                 self.errorNo += 1
                 root.remove(child)
                 continue
-                
+
             if child.find('body') != None and child.find('body').text !=  None and len(child.find('body').text) == 0 :
                 self.errorNo += 1
                 root.remove(child)
@@ -100,7 +100,7 @@ class Fix:
                 self.errorNo += 1
                 root.remove(child)
                 continue
-            
+
             tempS = child.find('date').text.split('-')
             if child.find('data') != None and child.find('date').text != None and int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
                 self.errorNo += 1
@@ -161,7 +161,7 @@ class Fix:
                 self.errorNo += 1
                 root.remove(child)
                 continue
-        
+
         container = root.findall('sighting')
         data = []
         for elem in container:
@@ -233,7 +233,7 @@ class Fix:
         else:
             raise ValueError(functionName,"AriesFile path is invalid")
 
-        ariesAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.ariesFile)
+        ariesAbsPath = os.path.join(os.getcwd(),self.ariesFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -264,6 +264,8 @@ class Fix:
             with open(starFile,'r') as f:
                 data = csv.reader(f,delimiter='\t')
                 for row in data:
+                    if len(row) != 4:
+                        raise ValueError(functionName," star file format is wrong\n")
                     body = row[0]
                     newdate = row[1]
                     longitudedegreeMinute = self.angle.setDegreesAndMinutes(row[2])
@@ -272,7 +274,7 @@ class Fix:
             f.close()
         else:
             raise ValueError(functionName,"starFile path is invalid")
-        starAbsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.starFile)
+        starAbsPath = os.path.join(os.getcwd(),self.starFile)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             f.write("LOG:\t")
@@ -290,11 +292,6 @@ class Fix:
         self.approximateLongitude = "0d0.0"
         if (self.sightingFile == None):
             raise ValueError(functionName,"no sighting file has been set ")
-#        if (self.ariesFile == None):
-#            raise ValueError(functionName,"no aries file has been set ")
-#        if (self.starFile == None):
-#            raise ValueError(functionName,"no star file has been set ")
-#
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
@@ -321,10 +318,24 @@ class Fix:
                 adjustedString +=  str(int(adjustedAltitude))
                 adjustedString += "d"
                 adjustedString += str(round(((adjustedAltitude - int(adjustedAltitude))*60),1))
+                f.write("LOG:\t")
+                tmpString = self.convertMTime()
+                f.write(tmpString)
+                f.write(":\t")
+                f.write(item[2])
+                f.write("\t")
+                f.write(item[0])
+                f.write("\t")
+                f.write(item[1])
+                f.write("\t")
+                f.write(adjustedString)
                 index = None
                 latitude = "0d0.0"
                 longitude = 0.0
-
+                if len(self.starData) == 0:
+                    raise ValueError(functionName,"no star file has been set ")
+                if len(self.ariesData) == 0:
+                    raise ValueError(functionName,"no aries file has been set ")
                 for i in range(len(self.starData)):
                     Date = datetime.strftime(datetime.strptime(self.starData[i][1], "%m/%d/%y").date(),"%Y-%m-%d")
                     if self.starData[i][0] == item[2]:
@@ -358,34 +369,22 @@ class Fix:
                     string +=  str(int(longitude))
                     string += "d"
                     string += str(round(((longitude - int(longitude))*60),1))
-                    f.write("LOG:\t")
-                    tmpString = self.convertMTime()
-                    f.write(tmpString)
-                    f.write(":\t")
-                    f.write(item[2])
-                    f.write("\t")
-                    f.write(item[0])
-                    f.write("\t")
-                    f.write(item[1])
-                    f.write("\t")
-                    f.write(adjustedString)
                     f.write("\t")
                     f.write(latitude)
                     f.write("\t")
                     f.write(string)
                     f.write("\n")
                 else:
-                    self.errorNo += 1
+                    f.write("\n")
 
             tmpString = self.convertMTime()
             f.write("LOG:\t")
             f.write(tmpString)
             f.write(":\t")
             f.write("Sighting errors:")
-            f.write(":\t")
+            f.write("\t")
             f.write(str(self.errorNo))
             f.write("\n")
-
         f.close()
 
         return (self.approximateLatitude,self.approximateLongitude)
