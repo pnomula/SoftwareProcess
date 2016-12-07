@@ -19,4 +19,14 @@
 		<pressure>1010</pressure>
 		<horizon>Natural</horizon>
 	</sighting>
+		<sighting>
+		<body>Acrux</body>
+		<date>2017-03-01</date>
+		<time>00:05:05</time>
+		<observation>020d05.0</observation>
+		<height>5.0</height>
+		<temperature>71</temperature>
+		<pressure>1010</pressure>
+		<horizon>Natural</horizon>
+	</sighting>
 </fix>			

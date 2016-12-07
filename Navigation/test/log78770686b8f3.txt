@@ -1,0 +1,4 @@
+LOG:	2016-12-06 20:06:19-06:00:	Log file: /Volumes/Maverick/Dropbox/workspace/SoftwareProcess/Navigation/test/log78770686b8f3.txt
+LOG:	2016-12-06 20:06:19-06:00:	Sighting file: /Volumes/Maverick/Dropbox/workspace/SoftwareProcess/Navigation/test/CA02_300_InvalidHorizon.xml
+LOG:	2016-12-06 20:06:19-06:00:	Star file: /Volumes/Maverick/Dropbox/workspace/SoftwareProcess/Navigation/test/CA03_Valid_Stars.txt
+LOG:	2016-12-06 20:06:19-06:00:	Aries file: /Volumes/Maverick/Dropbox/workspace/SoftwareProcess/Navigation/test/CA03_Valid_Aries.txt

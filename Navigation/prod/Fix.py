@@ -96,13 +96,13 @@ class Fix:
                 root.remove(child)
                 continue
 
-            if child.find('data') != None and child.find('date').text == None :
+            if child.find('date') != None and child.find('date').text == None :
                 self.errorNo += 1
                 root.remove(child)
                 continue
 
             tempS = child.find('date').text.split('-')
-            if child.find('data') != None and child.find('date').text != None and int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
+            if child.find('date') != None and child.find('date').text != None and int(tempS[1]) >12 or int(tempS[1]) < 01 or int(tempS[2]) > 31 or int(tempS[2]) >29 and int(tempS[1]) ==02 :
                 self.errorNo += 1
                 root.remove(child)
                 continue
@@ -122,6 +122,7 @@ class Fix:
                 self.errorNo += 1
                 root.remove(child)
                 continue
+
             if child.find('observation') == None :
                 self.errorNo += 1
                 root.remove(child)
@@ -286,12 +287,44 @@ class Fix:
         f.close()
         return starAbsPath
 
-    def getSightings(self):
+
+    def getSightings(self,assumedLatitude="0d0.0",assumedLongitude="0d0.0"):
         functionName = "Fix.getSightings:"
-        self.approximateLatitude = "0d0.0"
-        self.approximateLongitude = "0d0.0"
+        self.approximateLatitude = 0.0
+        self.approximateLongitude = 0.0
         if (self.sightingFile == None):
             raise ValueError(functionName,"no sighting file has been set ")
+        if len(self.starData) == 0:
+            raise ValueError(functionName,"no star file has been set ")
+        if len(self.ariesData) == 0:
+            raise ValueError(functionName,"no aries file has been set ")
+
+        # to check approximateLatitude
+        #defining the regular expression for syntax should be integer than d than float value
+        regex = r"([NS])*?([-,0-9]*?[\.,0-9]*)d([0-9]*?[\.,0-9]*)"
+        match = re.search(regex,assumedLatitude)
+        if match == None:
+            raise ValueError(functionName," \"Empty string passed\" violates the parament specification")
+        if (match.group(2) == ""):
+            raise ValueError(functionName," \"x null\" violates the parament specification")
+        if (re.search(r"\.", match.group(2))):
+            raise ValueError(functionName," \"x has decimal points \" violates the parament specification")
+        # check if float is having only one decimal point, if it has more than 1 decimal point, raise exception
+        if (re.search(r"\.", match.group(3)) and len(match.group(3).rsplit('.')[-1]) > 1):
+            raise ValueError(functionName," \"y.y \" violates the parament specification")
+        # check if float object is not negetive, minute can't be negetive, so raise execption in case of negetive
+        if (float(match.group(3)) < 0.0) :
+            raise ValueError(functionName," \"y.y\" violates the parament specification")
+        if ((match.group(1) == "") and (match.group(2) != "0")) or ((match.group(1) == "") and (match.group(3) != "0.0")):
+            raise ValueError(functionName," \"if h is missing, xdy.y must be 0d0.0\" violates the parament specification")
+        # convert the minute into decimal point for storing into angle variable
+        startChar = match.group(1)
+        if float(match.group(3)) < 0.0 :
+            self.assumedLatitude = 360 +( float(match.group(2)) % -360) - float(match.group(3))/60
+        else:
+            self.assumedLatitude = float(match.group(2)) % 360 + float(match.group(3))/60
+
+        self.assumedLongitude = self.angle.setDegreesAndMinutes(assumedLongitude)
         tmpString = self.convertMTime()
         with open(self.logFile,'a') as f:
             for item in self.sightingFileData:
@@ -330,12 +363,8 @@ class Fix:
                 f.write("\t")
                 f.write(adjustedString)
                 index = None
-                latitude = "0d0.0"
-                longitude = 0.0
-                if len(self.starData) == 0:
-                    raise ValueError(functionName,"no star file has been set ")
-                if len(self.ariesData) == 0:
-                    raise ValueError(functionName,"no aries file has been set ")
+                self.geoLatitude = 0.0
+                self.geoLongitude = 0.0
                 for i in range(len(self.starData)):
                     Date = datetime.strftime(datetime.strptime(self.starData[i][1], "%m/%d/%y").date(),"%Y-%m-%d")
                     if self.starData[i][0] == item[2]:
@@ -360,19 +389,76 @@ class Fix:
                         if flag == False and Date == fixedDate and int(self.ariesData[i][1]) == storeHour:
                             storeHour = self.ariesData[i][1]
                             GHA_aries2 = self.ariesData[i][2]
+
                     SHA_star = self.starData[index][2]
-                    latitude = self.starData[index][3]
                     second = int(item[1].split(":")[1])*60 + int(item[1].split(":")[2])
                     GHA_aries = GHA_aries1 + float(math.fabs(GHA_aries2 - GHA_aries1) * second)/3600
-                    longitude = (SHA_star + GHA_aries) % 360
-                    string = ""
-                    string +=  str(int(longitude))
-                    string += "d"
-                    string += str(round(((longitude - int(longitude))*60),1))
+                    self.geoLongitude = (SHA_star + GHA_aries) % 360
+
+                    geoLatitude = self.starData[index][3]
+                    self.geoLatitude = self.angle.setDegreesAndMinutes(geoLatitude)
+
+                    geoLongitude = ""
+                    geoLongitude +=  str(int(self.geoLongitude))
+                    geoLongitude += "d"
+                    geoLongitude += str(round(((self.geoLongitude - int(self.geoLongitude))*60),1))
+                    #task A
+                    LHA = self.geoLongitude - self.assumedLongitude
+
+                    #task B
+                    sinLat1 = math.sin(self.geoLatitude)
+                    sinLat2 = math.sin(self.assumedLatitude)
+                    sinLat = sinLat1 * sinLat2
+
+                    cosLat1 = math.cos(self.geoLatitude)
+                    cosLat2 = math.cos(self.assumedLatitude)
+                    cosLHA  = math.cos(LHA)
+                    cosLat = cosLat1*cosLat2*cosLHA
+
+                    intermediateDistance = sinLat + cosLat
+                    correctedAltitude = math.asin(intermediateDistance)
+
+                    #task C
+                    distanceAdjustment = correctedAltitude - adjustedAltitude
+
+                    arcMinute = 0
+                    arcMinute +=  int(distanceAdjustment)*60
+                    arcMinute += distanceAdjustment - int(distanceAdjustment)
+                    arcMinute = int(arcMinute)
+
+                    #task D
+                    sinLat1 = math.sin(self.geoLatitude)
+                    sinLat2 = math.sin(self.assumedLatitude)
+                    numerator = sinLat1 - sinLat2*intermediateDistance
+
+                    cosLat1 = math.cos(self.assumedLatitude)
+                    cosLat2 = math.cos(correctedAltitude)
+                    denominator = cosLat1*cosLat2
+
+                    intermediateAzimuth = numerator/denominator
+                    azimuthAdjustment = math.acos(intermediateAzimuth)
+
+
+                    self.approximateLatitude +=  distanceAdjustment*math.cos(azimuthAdjustment)
+                    self.approximateLongitude += distanceAdjustment*math.sin(azimuthAdjustment)
+
+                    azimuthString = ""
+                    azimuthString +=  str(int(azimuthAdjustment))
+                    azimuthString += "d"
+                    azimuthString += str(round(((azimuthAdjustment - int(azimuthAdjustment))*60),1))
+
                     f.write("\t")
-                    f.write(latitude)
+                    f.write(geoLatitude)
                     f.write("\t")
-                    f.write(string)
+                    f.write(geoLongitude)
+                    f.write("\t")
+                    f.write(assumedLatitude)
+                    f.write("\t")
+                    f.write(assumedLongitude)
+                    f.write("\t")
+                    f.write(azimuthString)
+                    f.write("\t")
+                    f.write(str(arcMinute))
                     f.write("\n")
                 else:
                     f.write("\n")
@@ -384,6 +470,36 @@ class Fix:
             f.write("Sighting errors:")
             f.write("\t")
             f.write(str(self.errorNo))
+            f.write("\n")
+
+
+            self.approximateLatitude /=  60
+            self.approximateLongitude /= 60
+
+            self.approximateLatitude += self.assumedLatitude
+            self.approximateLongitude += self.assumedLongitude
+
+            approximateLatitude = startChar
+            approximateLatitude +=  str(int(self.approximateLatitude))
+            approximateLatitude += "d"
+            approximateLatitude += str(round(((self.approximateLatitude - int(self.approximateLatitude))*60),1))
+
+            approximateLongitude = ""
+            approximateLongitude +=  str(int(self.approximateLongitude))
+            approximateLongitude += "d"
+            approximateLongitude += str(round(((self.approximateLongitude - int(self.approximateLongitude))*60),1))
+
+            tmpString = self.convertMTime()
+            f.write("LOG:\t")
+            f.write(tmpString)
+            f.write(":\t")
+            f.write("Approximate latitude:")
+            f.write("\t")
+            f.write(approximateLatitude)
+            f.write("\t")
+            f.write("Approximate longitude:")
+            f.write("\t")
+            f.write(approximateLongitude)
             f.write("\n")
         f.close()
 

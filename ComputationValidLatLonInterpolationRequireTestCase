@@ -1,0 +1,29 @@
+
+setSightingFile : ValidLatLonInterpolationRequired 
+<body>Betelgeuse</body>
+<date>2017-01-16</date>
+<time>03:15:42</time>
+
+Star : Betelgeuse   01/16/17    270d59.1    7d24.3
+                                                        -> latitude = 7d24.3
+                    StarData =  270 + 59.1/60 = 270.985
+
+
+Aries :             01/16/17    3   159d59.9
+                        
+                        GHA1 = 159 + 59.9/60 = 159.9983333333
+
+                    01/16/17    4   175d02.4
+                        GHA2 = 175 + 2.4/60 = 175.04
+
+                    second = 15*60 + 42
+                        GHAData = GHA1 + |GHA2 - GHA1|  * second/3600
+                                = 159.998 + 15.042* 942/3600= 175.04
+                                = 159.998 + 3.93599 = 163.93399
+                        
+                    longitude = StarData + GHAData =
+                              = 270.985 + 163.93399
+                              = 434.91899 - 360
+                              = 74.91899
+                              = 74d55.2
+
